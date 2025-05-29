@@ -16,5 +16,72 @@
     <p>Status: <span id="status">Belum terhubung</span></p>
     <p>Alamat Wallet Kamu: <span id="walletAddress">-</span></p>
     <p>Saldo ETH Kamu: <span id="walletBalance">-</span></p>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+    <script>
+      const connectButton = document.getElementById("connectButton");
+      const statusSpan = document.getElementById("status");
+      const addressSpan = document.getElementById("walletAddress");
+      const balanceSpan = document.getElementById("walletBalance");
+
+      async function connectWallet() {
+        // Cek apakah ada metamask di browser user
+        // biasanya metamask menamai objek dengan ehtereum
+        if (typeof window.ethereum !== "undefined") {
+          console.log("Metamask terdeteksi");
+          statusSpan.textContent = "Mencoba terhubung...";
+
+          try {
+            // Minta ijin user lewat metamask
+            // eth_requestAccount = meminta daftar akun
+            const account = await window.ethereum.request({
+              method: "eth_requestAccounts",
+            });
+
+            // Ambil alamat pertama dari daftar (biasanya akun aktif)
+            const userAddress = account[0];
+            console.log("Berhasil terhubung dengan alamat: ", userAddress);
+
+            // Tampilin di web fe nya
+            statusSpan.textContent = "Terhubung!";
+            addressSpan.textContent = userAddress;
+            connectButton.textContent = "Sudah Terhubung!";
+            connectButton.disabled = true;
+
+            // sekarang gunakan ehters.js
+            // buat 'provider' dari window.ehtereum yang dikasih metamask
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+            // minta provider untuk baca saldo alamat tadi
+            const balanceWei = await provider.getBalance(userAddress);
+
+            // saldo biasanya dalam satuan 'Wei' (kecil)
+            // ubah jadi 'ether' biar gambang dibaca pakai ethers.js
+            const balanceEth = ethers.utils.formatEther(balanceWei);
+
+            // tampilkan saldo! (ambil 4 angka di belakang koma)
+            balanceSpan.textContent = `${parseFloat(balanceEth).toFixed(
+              4
+            )} ETH`;
+          } catch (error) {
+            // jika pengguna menolak atau error lain
+            console.log("Gagal terhubung: ", error);
+            statusSpan.textContent = "Gagal terhubung atau ditolak.";
+            addressSpan.textContent = "-";
+            balanceSpan.textContent = "-";
+          }
+        } else {
+          // kalo gk ada metamask
+          console.log("Metamask tidak terdeteksi");
+          statusSpan.textContent = "Metamask tidak terdeteksi";
+          alert(
+            "Sepertinya kamu belum install Metamask. Coba install dulu ya!"
+          );
+        }
+      }
+
+      connectButton.onclick = connectWallet;
+    </script>
   </body>
 </html>
